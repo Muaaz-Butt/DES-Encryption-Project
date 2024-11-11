@@ -16,16 +16,13 @@ class DESCipher:
         # Initial permutation
         block = ''.join(block[i-1] for i in DESConstants.IP)
         
-        # Split block into left and right halves
         left = block[:32]
         right = block[32:]
         
-        # 16 rounds of Feistel network
         for round_key in round_keys:
             # Save previous right half
             previous_right = right
             
-            # Apply Feistel function
             f_result = FeistelNetwork.f_function(right, round_key)
             
             # XOR left half with f_result
