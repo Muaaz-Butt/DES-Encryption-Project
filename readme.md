@@ -6,7 +6,6 @@ This project implements the Data Encryption Standard (DES) algorithm for encrypt
 - DES key scheduling
 - PDF File Handling (Read/Write)
 - Encryption/Decryption useing DES
-- GUI to interact with the user
 
 ## How to run
 
@@ -18,7 +17,7 @@ This project implements the Data Encryption Standard (DES) algorithm for encrypt
 ## Requirements
 - python 3.x
 - PyPDF2
-- Tkinter (for GUI)
+
  
 
 
