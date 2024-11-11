@@ -1,4 +1,14 @@
 def initial_permutation(input_key):
+    """Perform initial permutation on 64-bit input."""
+    if not isinstance(input_key, str):
+        raise ValueError("Input must be a binary string")
+    
+    if len(input_key) != 64:
+        raise ValueError("Input must be exactly 64 bits")
+        
+    if not all(bit in '01' for bit in input_key):
+        raise ValueError("Input must be a binary string containing only 0s and 1s")
+    
     IP_TABLE = [
         58, 50, 42, 34, 26, 18, 10, 2,
         60, 52, 44, 36, 28, 20, 12, 4,
@@ -12,8 +22,4 @@ def initial_permutation(input_key):
     
     input_bits = [int(bit) for bit in input_key]
     permuted_bits = [input_bits[i - 1] for i in IP_TABLE]
-    permuted_key = ''.join([str(bit) for bit in permuted_bits])
-    
-    return permuted_key
-     
-    
+    return ''.join(str(bit) for bit in permuted_bits)

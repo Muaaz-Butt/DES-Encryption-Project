@@ -1,36 +1,51 @@
 from master_key_generator import generate_master_key
 from initial_permutation import initial_permutation
 from split_key import split_key_into_32_bits
-from key_scheduling import left_circular_shift, SHIFT_SCHEDULE, generate_round_keys
+from key_scheduling import DESKeyScheduler
 from text_handling import text_to_binary, pad_binary, divide_into_blocks
 from take_input_pdf import input_pdf
+from des_cipher import DESCipher
 
 def main():
-    plaintext = input_pdf()
-    
-    binary_text = text_to_binary(plaintext)
-    padded_binary_text = pad_binary(binary_text)
-    blocks = divide_into_blocks(padded_binary_text)
-
-    #print(f"Binary text: {binary_text}")
-    #print(f"Padded binary text: {padded_binary_text}")
-    print(f"64-bit blocks: {blocks}")
-    
-    name = "MUAAZBUTT"
-    master_key = generate_master_key(name)
-    #print(f"Generated Master Key: {master_key}")
-    
-    permutated_key = initial_permutation(master_key)
-    #print(f"Permuted Master Key: {permutated_key}")
-    
-    left_half, right_half = split_key_into_32_bits(permutated_key)
-    #print(f"Left Half: {left_half}")
-    #print(f"Right Half: {right_half}")
-    
-    round_keys = generate_round_keys(master_key)
-    #print("\nGenerated Round Keys:")
-    #for i, round_key in enumerate(round_keys):
-        #print(f"Round {i+1} Key: {round_key}")
+    try:
+        print("Reading PDF file...")
+        plaintext = input_pdf()
+        print(f"Successfully extracted text ({len(plaintext)} characters)")
+        
+        name = "MUAAZBUT"
+        master_key = generate_master_key(name)
+        print("Master key generated successfully")
+        
+        # Create DES cipher instance
+        des = DESCipher(master_key)
+        
+        # Encrypt the text
+        print("\nEncrypting text...")
+        ciphertext = des.encrypt(plaintext)
+        print("Encryption successful!")
+        print(f"\nFirst 64 bits of ciphertext: {ciphertext[:64]}")
+        
+        # Decrypt the text
+        print("\nDecrypting text...")
+        decrypted_text = des.decrypt(ciphertext)
+        print("Decryption successful!")
+        
+        # Verify results
+        if decrypted_text == plaintext:
+            print("\nVerification successful: Decrypted text matches original!")
+        else:
+            print("\nWarning: Decrypted text differs from original!")
+            
+        # Save results
+        with open("encrypted.txt", "w") as f:
+            f.write(ciphertext)
+        with open("decrypted.txt", "w") as f:
+            f.write(decrypted_text)
+            
+        print("\nResults have been saved to 'encrypted.txt' and 'decrypted.txt'")
+        
+    except Exception as e:
+        print(f"Error: {str(e)}")
 
 if __name__ == "__main__":
     main()
