@@ -1,18 +1,18 @@
 def generate_master_key(name):
-    # Convert the name to uppercase and remove spaces
-    name = name.replace(" ", "").upper()[:8]
+    """Generate a 64-bit key from a name."""
+    if not isinstance(name, str):
+        raise ValueError("Input must be a string")
     
-    # Convert each character to ASCII and convert to binary (8-bit)
-    binary_key = ""
+    name = name.replace(" ", "").upper()
     
-    for char in name:
-        ascii_number = ord(char)
-        #print(ascii_number)
-        binary_value = format(ascii_number, '08b')
-        #print(binary_value)
-        binary_key += binary_value
-  
-    return binary_key
+    if len(name) < 8:
+        name = name.ljust(8, 'X')  
+    else:
+        name = name[:8]  
+
+    binary_key = ''.join(format(ord(char), '08b') for char in name)
+    
+    if len(binary_key) != 64:
+        raise ValueError("Generated key must be exactly 64 bits")
         
-    
-    
+    return binary_key
