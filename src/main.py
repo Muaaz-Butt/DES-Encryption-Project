@@ -5,6 +5,64 @@ from key_scheduling import DESKeyScheduler
 from text_handling import text_to_binary, pad_binary, divide_into_blocks
 from take_input_pdf import input_pdf
 from des_cipher import DESCipher
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+import datetime
+
+def create_pdf_document(filename, title, content):
+    """Create a PDF document with given title and content."""
+    doc = SimpleDocTemplate(
+        filename,
+        pagesize=letter,
+        rightMargin=72,
+        leftMargin=72,
+        topMargin=72,
+        bottomMargin=72
+    )
+    
+    # Create styles
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=16,
+        spaceAfter=30,
+        alignment=1  # Center alignment
+    )
+    
+    content_style = ParagraphStyle(
+        'CustomBody',
+        parent=styles['Normal'],
+        fontSize=12,
+        spaceAfter=12,
+        leading=14
+    )
+    
+    # Create the PDF content
+    elements = []
+    
+    # Add timestamp
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    elements.append(Paragraph(f"Generated on: {timestamp}", styles['Normal']))
+    elements.append(Spacer(1, 0.2 * inch))
+    
+    # Add title
+    elements.append(Paragraph(title, title_style))
+    
+    # Add content
+    # Split content into manageable chunks to avoid overflow
+    chunk_size = 5000  # Adjust this value based on your needs
+    for i in range(0, len(content), chunk_size):
+        chunk = content[i:i + chunk_size]
+        elements.append(Paragraph(chunk, content_style))
+        elements.append(Spacer(1, 0.2 * inch))
+    
+    # Build the PDF
+    doc.build(elements)
 
 def main():
     try:
@@ -36,13 +94,24 @@ def main():
         else:
             print("\nWarning: Decrypted text differs from original!")
             
-        # Save results
-        with open("encrypted.txt", "w") as f:
-            f.write(ciphertext)
-        with open("decrypted.txt", "w") as f:
-            f.write(decrypted_text)
+        # Save results to PDF files
+        print("\nGenerating PDF files...")
+        
+        # Create encrypted PDF
+        create_pdf_document(
+            "encrypted.pdf",
+            "DES Encrypted Text",
+            ciphertext
+        )
+        
+        # Create decrypted PDF
+        create_pdf_document(
+            "decrypted.pdf",
+            "DES Decrypted Text",
+            decrypted_text
+        )
             
-        print("\nResults have been saved to 'encrypted.txt' and 'decrypted.txt'")
+        print("\nResults have been saved to 'encrypted.pdf' and 'decrypted.pdf'")
         
     except Exception as e:
         print(f"Error: {str(e)}")
