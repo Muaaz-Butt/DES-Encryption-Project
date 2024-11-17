@@ -1,17 +1,13 @@
+import tkinter as tk
+from tkinter import filedialog, messagebox
 from master_key_generator import generate_master_key
-from initial_permutation import initial_permutation
-from split_key import split_key_into_32_bits
-from key_scheduling import DESKeyScheduler
-from text_handling import text_to_binary, pad_binary, divide_into_blocks
-from take_input_pdf import input_pdf
+from take_input_pdf import extract_text_from_pdf
 from des_cipher import DESCipher
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
-from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
 import datetime
+import os
 
 def create_pdf_document(filename, title, content):
     """Create a PDF document with given title and content."""
@@ -24,97 +20,73 @@ def create_pdf_document(filename, title, content):
         bottomMargin=72
     )
     
-    # Create styles
     styles = getSampleStyleSheet()
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=16,
-        spaceAfter=30,
-        alignment=1  # Center alignment
-    )
-    
-    content_style = ParagraphStyle(
-        'CustomBody',
-        parent=styles['Normal'],
-        fontSize=12,
-        spaceAfter=12,
-        leading=14
-    )
-    
-    # Create the PDF content
-    elements = []
-    
-    # Add timestamp
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    elements.append(Paragraph(f"Generated on: {timestamp}", styles['Normal']))
-    elements.append(Spacer(1, 0.2 * inch))
-    
-    # Add title
+    title_style = ParagraphStyle('TitleStyle', parent=styles['Heading1'], fontSize=16, alignment=1)
+    content_style = ParagraphStyle('ContentStyle', parent=styles['Normal'], fontSize=12)
+
+    elements = [Paragraph(f"Generated on: {datetime.datetime.now()}", styles['Normal'])]
+    elements.append(Spacer(1, 12))
     elements.append(Paragraph(title, title_style))
-    
-    # Add content
-    # Split content into manageable chunks to avoid overflow
-    chunk_size = 5000  # Adjust this value based on your needs
-    for i in range(0, len(content), chunk_size):
-        chunk = content[i:i + chunk_size]
-        elements.append(Paragraph(chunk, content_style))
-        elements.append(Spacer(1, 0.2 * inch))
-    
-    # Build the PDF
+    elements.append(Spacer(1, 24))
+    elements.append(Paragraph(content, content_style))
     doc.build(elements)
 
+class DESApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("PDF Encryption & Decryption with DES")
+        self.root.geometry("500x300")
+        
+        # Path to the selected file
+        self.file_path = tk.StringVar()
+        
+        # GUI Elements
+        tk.Label(root, text="Select a PDF file", font=("Arial", 14)).pack(pady=10)
+        tk.Entry(root, textvariable=self.file_path, width=50).pack(pady=5)
+        tk.Button(root, text="Browse", command=self.browse_file).pack(pady=5)
+        
+        # Button to perform both encrypt and decrypt actions on the selected PDF
+        tk.Button(root, text="Encrypt & Decrypt PDF", command=self.encrypt_and_decrypt_pdf, bg="lightgreen").pack(pady=20)
+    
+    def browse_file(self):
+        """Open file dialog to select a PDF file."""
+        file_path = filedialog.askopenfilename(filetypes=[("PDF files", "*.pdf")])
+        if file_path:
+            self.file_path.set(file_path)
+    
+    def encrypt_and_decrypt_pdf(self):
+        """Encrypt and decrypt the selected PDF file on a single click."""
+        file_path = self.file_path.get()
+        if not os.path.exists(file_path):
+            messagebox.showerror("Error", "Please select a valid PDF file")
+            return
+        
+        try:
+            # Extract text from the selected PDF file
+            plaintext = extract_text_from_pdf(file_path)
+            if not plaintext:
+                raise ValueError("Failed to extract text from PDF")
+
+            # Generate master key and encrypt the text
+            name = "MUAAZBUT"
+            master_key = generate_master_key(name)
+            des = DESCipher(master_key)
+
+            ciphertext = des.encrypt(plaintext)
+            create_pdf_document("encrypted.pdf", "DES Encrypted Text", ciphertext)
+            
+            # Decrypt the ciphertext
+            decrypted_text = des.decrypt(ciphertext)
+            create_pdf_document("decrypted.pdf", "DES Decrypted Text", decrypted_text)
+
+            messagebox.showinfo("Success", "PDF encrypted and decrypted. Files saved as 'encrypted.pdf' and 'decrypted.pdf'")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
 def main():
-    try:
-        print("Reading PDF file...")
-        plaintext = input_pdf()
-        print(f"Successfully extracted text ({len(plaintext)} characters)")
-        
-        name = "MUAAZBUT"
-        master_key = generate_master_key(name)
-        print("Master key generated successfully")
-        
-        # Create DES cipher instance
-        des = DESCipher(master_key)
-        
-        # Encrypt the text
-        print("\nEncrypting text...")
-        ciphertext = des.encrypt(plaintext)
-        print("Encryption successful!")
-        print(f"\nFirst 64 bits of ciphertext: {ciphertext[:64]}")
-        
-        # Decrypt the text
-        print("\nDecrypting text...")
-        decrypted_text = des.decrypt(ciphertext)
-        print("Decryption successful!")
-        
-        # Verify results
-        if decrypted_text == plaintext:
-            print("\nVerification successful: Decrypted text matches original!")
-        else:
-            print("\nWarning: Decrypted text differs from original!")
-            
-        # Save results to PDF files
-        print("\nGenerating PDF files...")
-        
-        # Create encrypted PDF
-        create_pdf_document(
-            "encrypted.pdf",
-            "DES Encrypted Text",
-            ciphertext
-        )
-        
-        # Create decrypted PDF
-        create_pdf_document(
-            "decrypted.pdf",
-            "DES Decrypted Text",
-            decrypted_text
-        )
-            
-        print("\nResults have been saved to 'encrypted.pdf' and 'decrypted.pdf'")
-        
-    except Exception as e:
-        print(f"Error: {str(e)}")
+    root = tk.Tk()
+    app = DESApp(root)
+    root.mainloop()
 
 if __name__ == "__main__":
     main()
